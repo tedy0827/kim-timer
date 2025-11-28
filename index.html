@@ -16,6 +16,7 @@
       margin: 0; min-height: 100vh;
       display: flex; align-items: center; justify-content: center;
       background: #020617; color: #e5e7eb;
+      visibility: hidden;
     }
 
     .card {
@@ -244,22 +245,28 @@
   const db = getFirestore(app);
 
   // Firestore에서 비밀번호 가져오기
-  async function checkPassword() {
-    const ref = doc(db, "security", "password");
-    const snapshot = await getDoc(ref);
+async function checkPassword() {
+  const ref = doc(db, "security", "password");
+  const snapshot = await getDoc(ref);
 
-    if (!snapshot.exists()) {
-      alert("접속 오류: 비밀번호 문서가 없습니다.");
-      return;
-    }
+  if (!snapshot.exists()) {
+    alert("접속 오류: 비밀번호 문서가 없습니다.");
+    return;
+  }
 
-    const realPassword = snapshot.data().value;
+  const realPassword = snapshot.data().value;
 
-    let input = prompt("비밀번호를 입력하세요:");
-    if (input !== realPassword) {
-      alert("비밀번호가 일치하지 않습니다!");
-      return checkPassword(); // 다시 입력
-    }
+  const input = prompt("비밀번호를 입력하세요:");
+  if (input === realPassword) {
+    // ✅ 비밀번호가 맞았을 때 여기서 화면을 보이게 함
+    document.body.style.visibility = "visible";
+    return; // 더 이상 재귀 호출 필요 없음, 여기서 끝
+  }
+
+  alert("비밀번호가 일치하지 않습니다!");
+  return checkPassword(); // ❌ 틀렸을 때만 다시 실행
+}
+
   }
 
   await checkPassword();
@@ -639,6 +646,7 @@
   </script>
 </body>
 </html>
+
 
 
 
