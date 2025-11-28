@@ -227,7 +227,7 @@
 
   </style>
 </head>
-<body>
+<body style="visibility:hidden;">
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
@@ -272,6 +272,18 @@ async function checkPassword() {
 
   await checkPassword();
   
+  // ⬇⬇⬇⬇⬇⬇⬇ 여기가 정확한 위치
+  const passwordRef = doc(db, "security", "password");
+
+  onSnapshot(passwordRef, (snapshot) => {
+    const newPassword = snapshot.data().value;
+
+    // 비번 변경되면 강제 로그아웃
+    if (savedPassword && newPassword !== savedPassword) {
+      alert("비밀번호가 변경되어 자동 로그아웃됩니다.");
+      location.reload();
+    }
+  });
 
 </script>
 
@@ -649,6 +661,7 @@ async function checkPassword() {
   </script>
 </body>
 </html>
+
 
 
 
