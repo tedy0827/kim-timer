@@ -1,1 +1,614 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>비숍리저 공유 타이머</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <!-- Firebase compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI"; }
+
+    body {
+      margin: 0; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: #020617; color: #e5e7eb;
+    }
+
+    .card {
+      background: #020617; border-radius: 20px;
+      padding: 20px; width: 100%; max-width: 900px;
+      border: 1px solid #1f2937;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+
+    .title {
+      font-size: 26px;
+      font-weight: 700;
+      flex: 1;
+      text-align: center; /* 가운데 정렬 */
+    }
+
+    .title-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .reset-btn {
+      padding: 6px 12px;
+      background: #ef4444;
+      border: 1px solid #dc2626;
+      border-radius: 10px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .reset-btn:hover { background: #dc2626; }
+
+    .subtitle {
+      text-align: center; font-size: 12px;
+      color: #9ca3af; margin-bottom: 12px;
+    }
+
+    .section-box {
+      margin-top: 12px;
+      border-radius: 16px;
+      padding: 10px 12px;
+      border: 1px solid #111827;
+      margin-bottom: 10px;
+    }
+
+    
+  /* 비숍 - 은은한 파랑 톤 */
+.bishop-box {
+  background: rgba(30, 58, 138, 0.35); /* #1e3a8a 35% 투명 */
+  border-color: #1e3a8a;
+}
+
+/* 손님다이 - 은은한 청록 톤 */
+.die-box {
+  background: rgba(15, 118, 110, 0.28); /* #0f766e 28% 투명 */
+  border-color: #0f766e;
+}
+
+/* 갈! - 은은한 주황·빨강 톤 */
+.go-main-box {
+  background: rgba(185, 28, 28, 0.28); /* #b91c1c 28% 투명 */
+  border-color: #b91c1c;
+}
+
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-align: center;  /* 가운데 정렬 */
+    }
+
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .slot {
+      background: rgba(15,23,42,0.7);
+      border-radius: 16px;
+      padding: 12px;
+      border: 1px solid #1f2937;
+    }
+
+    .name-input {
+      width: 100%; padding: 6px 8px; font-size: 13px;
+      border-radius: 999px; border: 1px solid #1f2937;
+      background: #020617; color: #e5e7eb;
+      outline: none; margin-bottom: 6px;
+    }
+    .name-input:focus { border-color: #3b82f6; }
+
+    .use-btn {
+      width: 100%; padding: 8px 10px; font-size: 13px;
+      border-radius: 999px;
+      border: 1px solid #2563eb;
+      background: #3b82f6;
+      color: #fff; font-weight: 700;
+      cursor: pointer; margin-bottom: 8px;
+    }
+
+    .die-btn {
+      width: 120px; padding: 8px 10px; font-size: 13px;
+      border-radius: 999px;
+      border: 1px solid #22c55e;
+      background: #16a34a;
+      color: #fff; font-weight: 700;
+      cursor: pointer; margin-right: 10px;
+    }
+
+    .go-btn {
+      width: 100%; padding: 8px 10px; font-size: 13px;
+      border-radius: 999px;
+      border: 1px solid #dc2626;
+      background: #ef4444;
+      color: #fff; font-weight: 700;
+      cursor: pointer; margin-bottom: 8px;
+    }
+
+    .time-box {
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #111827;
+      background: #020617;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .time-label {
+      color: #9ca3af;
+      font-size: 11px;
+    }
+
+    .time-value {
+      margin-left: 4px;
+      font-weight: 800;
+      font-size: 14px;
+      font-family: "Consolas", "SF Mono", monospace;
+      color: #f9fafb;
+    }
+
+    /* 손님다이 타임박스 색 */
+    .die-time-box {
+      background: #04101f;
+      border-color: #0f766e;
+    }
+
+    /* 갈! 타임박스 색 */
+    .go-time-box {
+      background: #16040a;
+      border-color: #b91c1c;
+    }
+
+    .die-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .go-row {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .go-box {
+      flex: 1;
+      background: rgba(15,23,42,0.7);
+      border-radius: 16px;
+      border: 1px solid #1f2937;
+      padding: 12px;
+    }
+
+    .go-title { font-size: 15px; margin-bottom: 4px; }
+
+    .footer {
+      margin-top: 6px; font-size: 11px;
+      text-align: right; color: #6b7280;
+    }
+
+    @media (max-width: 768px) {
+      .slots { grid-template-columns: repeat(2, 1fr); }
+      .die-row { flex-direction: column; align-items: flex-start; }
+      .die-btn { width: 100%; margin-right: 0; }
+    }
+
+    @media (max-width: 480px) {
+      .slots { grid-template-columns: 1fr; }
+    }
+
+.remain-time {
+  color: #fde047 !important;
+  text-shadow: 0 0 6px rgba(250, 204, 21, 0.6);
+}
+
+  </style>
+</head>
+<body>
+<script>
+  const PASSWORD = "popo";
+
+  // 단순한 prompt 대신 → 오입력 방지 + 취소 금지 처리
+  function passwordCheck() {
+    let input = prompt("비밀번호를 입력하세요:");
+    if (input === PASSWORD) return;
+    alert("비밀번호가 일치하지 않습니다!");
+    passwordCheck(); // 틀리면 다시 입력
+  }
+
+  passwordCheck();
+</script>
+
+  <div class="card">
+    <!-- 제목 + 전체/비숍 초기화 -->
+    <div class="title-row">
+      <div class="title">비숍리저</div>
+      <div class="title-buttons">
+        <button class="reset-btn" id="resetAll">전체 초기화</button>
+        <button class="reset-btn" id="resetBishop">비숍 초기화</button>
+      </div>
+    </div>
+
+    <div class="subtitle">리저 / 손님다이 / 갈! 타이머 공유 시스템</div>
+
+    <!-- 비숍리저 섹션 -->
+    <div class="section-box bishop-box">
+      <div class="section-title">비숍리저</div>
+      <div class="slots">
+        <div class="slot" data-index="0">
+          <input class="name-input" placeholder="캐릭터 이름" />
+          <button class="use-btn">사용</button>
+          <div class="time-box">
+            <div><span class="time-label">다음 사용:</span><span class="time-value end-time">--:--:--</span></div>
+            <div><span class="time-label">남은 시간:</span><span class="time-value remain-time">대기 중</span></div>
+          </div>
+        </div>
+
+        <div class="slot" data-index="1">
+          <input class="name-input" placeholder="캐릭터 이름" />
+          <button class="use-btn">사용</button>
+          <div class="time-box">
+            <div><span class="time-label">다음 사용:</span><span class="time-value end-time">--:--:--</span></div>
+            <div><span class="time-label">남은 시간:</span><span class="time-value remain-time">대기 중</span></div>
+          </div>
+        </div>
+
+        <div class="slot" data-index="2">
+          <input class="name-input" placeholder="캐릭터 이름" />
+          <button class="use-btn">사용</button>
+          <div class="time-box">
+            <div><span class="time-label">다음 사용:</span><span class="time-value end-time">--:--:--</span></div>
+            <div><span class="time-label">남은 시간:</span><span class="time-value remain-time">대기 중</span></div>
+          </div>
+        </div>
+
+        <div class="slot" data-index="3">
+          <input class="name-input" placeholder="캐릭터 이름" />
+          <button class="use-btn">사용</button>
+          <div class="time-box">
+            <div><span class="time-label">다음 사용:</span><span class="time-value end-time">--:--:--</span></div>
+            <div><span class="time-label">남은 시간:</span><span class="time-value remain-time">대기 중</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 손님다이 섹션 -->
+    <div class="section-box die-box">
+      <div class="section-title">손님다이</div>
+      <div class="die-row">
+        <button class="die-btn" id="dieBtn">다이</button>
+        <div class="time-box die-time-box">
+          <div><span class="time-label">마을귀환:</span><span class="time-value" id="dieEnd">--:--:--</span></div>
+          <div><span class="time-label">남은 시간:</span><span class="time-value remain-time" id="dieRemain">대기 중</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 갈! 섹션 -->
+    <div class="section-box go-main-box">
+      <div class="section-title">갈!</div>
+      <div class="go-row">
+        <div class="go-box">
+          <div class="go-title">5분갈</div>
+          <button class="go-btn" id="go5Btn">갈!!!</button>
+          <div class="time-box go-time-box">
+            <span class="time-label">남은 시간:</span>
+            <span class="time-value remain-time" id="go5Remain">대기 중</span>
+          </div>
+        </div>
+
+        <div class="go-box">
+          <div class="go-title">3분갈</div>
+          <button class="go-btn" id="go3Btn">갈!!!</button>
+          <div class="time-box go-time-box">
+            <span class="time-label">남은 시간:</span>
+            <span class="time-value remain-time" id="go3Remain">대기 중</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      비숍리저: 30분 / 손님다이: 14분 59초 (1분 전 띵×3) / 갈!: 5·3분 (10초 전 띵)
+    </div>
+  </div>
+
+  <script>
+    /* ---------- Firebase 설정 ---------- */
+    firebase.initializeApp({
+      apiKey: "AIzaSyCcz6niw3L7eWbQSKg93h1z6e2JzzLe9RM",
+      authDomain: "timer-e2166.firebaseapp.com",
+      projectId: "timer-e2166"
+    });
+    const db = firebase.firestore();
+    const dataRef = db.collection("bishopRegen").doc("main");
+
+    /* ---------- 상수 ---------- */
+    const BISHOP_COOL = 30 * 60 * 1000;
+    const DIE_COOL = (14 * 60 + 59) * 1000;
+    const GO5 = 5 * 60 * 1000;
+    const GO3 = 3 * 60 * 1000;
+
+    /* ---------- 상태 ---------- */
+    let slots = [
+      { name: "", end: null },
+      { name: "", end: null },
+      { name: "", end: null },
+      { name: "", end: null }
+    ];
+    let dieEnd = null;
+    let go5End = null;
+    let go3End = null;
+    let dieWarned = false;
+    let go5Warned = false;
+    let go3Warned = false;
+
+    /* ---------- 초기 문서 생성 ---------- */
+    dataRef.get().then(doc => {
+      if (!doc.exists) {
+        dataRef.set({
+          slots,
+          dieEnd: null,
+          go5End: null,
+          go3End: null
+        });
+      }
+    });
+
+    /* ---------- 소리 (기본 삐- + 삼연속) ---------- */
+    function ding() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        o.type = "sine";
+        o.frequency.value = 880;
+        o.connect(ctx.destination);
+        o.start();
+        setTimeout(() => { o.stop(); ctx.close(); }, 150);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function tripleDing() {
+      ding();
+      setTimeout(ding, 200);
+      setTimeout(ding, 400);
+    }
+
+    /* ---------- 실시간 수신 ---------- */
+    dataRef.onSnapshot(doc => {
+      if (!doc.exists) return;
+      const d = doc.data() || {};
+      if (Array.isArray(d.slots)) slots = d.slots;
+      dieEnd = typeof d.dieEnd === "number" ? d.dieEnd : null;
+      go5End = typeof d.go5End === "number" ? d.go5End : null;
+      go3End = typeof d.go3End === "number" ? d.go3End : null;
+
+      if (!dieEnd) dieWarned = false;
+      if (!go5End) go5Warned = false;
+      if (!go3End) go3Warned = false;
+
+      updateUI();
+    });
+
+    /* ---------- UI 업데이트 ---------- */
+    function updateUI() {
+      const now = Date.now();
+
+      // 비숍 4칸
+      document.querySelectorAll(".slot").forEach((slotEl, i) => {
+        const nameInput = slotEl.querySelector(".name-input");
+        const btn = slotEl.querySelector(".use-btn");
+        const endSpan = slotEl.querySelector(".end-time");
+        const remainSpan = slotEl.querySelector(".remain-time");
+
+        if (document.activeElement !== nameInput) {
+          nameInput.value = slots[i].name || "";
+        }
+
+        if (!slots[i].end) {
+          endSpan.textContent = "--:--:--";
+          remainSpan.textContent = "대기 중";
+          btn.textContent = "사용";
+          // 파란색 기본 상태
+          btn.style.backgroundColor = "#3b82f6";
+          btn.style.borderColor = "#2563eb";
+          btn.style.color = "#ffffff";
+          return;
+        }
+
+        const diff = slots[i].end - now;
+        endSpan.textContent = new Date(slots[i].end).toLocaleTimeString("ko-KR", { hour12: false });
+
+        if (diff <= 0) {
+          remainSpan.textContent = "00:00";
+          btn.textContent = "사용";
+          // 쿨 끝나면 다시 파랑
+          btn.style.backgroundColor = "#3b82f6";
+          btn.style.borderColor = "#2563eb";
+          btn.style.color = "#ffffff";
+          return;
+        }
+
+        const s = Math.floor(diff / 1000);
+        const mm = String(Math.floor(s / 60)).padStart(2, "0");
+        const ss = String(s % 60).padStart(2, "0");
+        remainSpan.textContent = `${mm}:${ss}`;
+        btn.textContent = "리저 쿨도는중";
+
+        // 쿨 도는 중: 노란색 계열
+        btn.style.backgroundColor = "#facc15";
+        btn.style.borderColor = "#eab308";
+        btn.style.color = "#1f2937";
+      });
+
+      // 손님다이
+      const dieRemainSpan = document.getElementById("dieRemain");
+      const dieEndSpan = document.getElementById("dieEnd");
+      if (!dieEnd) {
+        dieEndSpan.textContent = "--:--:--";
+        dieRemainSpan.textContent = "대기 중";
+      } else {
+        const diff = dieEnd - now;
+        dieEndSpan.textContent = new Date(dieEnd).toLocaleTimeString("ko-KR", { hour12: false });
+        if (diff <= 0) {
+          dieRemainSpan.textContent = "00:00";
+        } else {
+          const s = Math.floor(diff / 1000);
+          const mm = String(Math.floor(s / 60)).padStart(2, "0");
+          const ss = String(s % 60).padStart(2, "0");
+          dieRemainSpan.textContent = `${mm}:${ss}`;
+          if (diff <= 60000 && !dieWarned) {
+            tripleDing();
+            dieWarned = true;
+          }
+        }
+      }
+
+      // 5분갈
+      const go5RemainSpan = document.getElementById("go5Remain");
+      const go5Btn = document.getElementById("go5Btn");
+      if (!go5End) {
+        go5RemainSpan.textContent = "대기 중";
+        go5Btn.textContent = "갈!!!";
+      } else {
+        const diff = go5End - now;
+        if (diff <= 0) {
+          go5RemainSpan.textContent = "00:00";
+          go5Btn.textContent = "갈!!!";
+        } else {
+          const s = Math.floor(diff / 1000);
+          const mm = String(Math.floor(s / 60)).padStart(2, "0");
+          const ss = String(s % 60).padStart(2, "0");
+          go5RemainSpan.textContent = `${mm}:${ss}`;
+          go5Btn.textContent = "가는중...";
+          if (diff <= 10000 && !go5Warned) {
+            ding();
+            go5Warned = true;
+          }
+        }
+      }
+
+      // 3분갈
+      const go3RemainSpan = document.getElementById("go3Remain");
+      const go3Btn = document.getElementById("go3Btn");
+      if (!go3End) {
+        go3RemainSpan.textContent = "대기 중";
+        go3Btn.textContent = "갈!!!";
+      } else {
+        const diff = go3End - now;
+        if (diff <= 0) {
+          go3RemainSpan.textContent = "00:00";
+          go3Btn.textContent = "갈!!!";
+        } else {
+          const s = Math.floor(diff / 1000);
+          const mm = String(Math.floor(s / 60)).padStart(2, "0");
+          const ss = String(s % 60).padStart(2, "0");
+          go3RemainSpan.textContent = `${mm}:${ss}`;
+          go3Btn.textContent = "가는중...";
+          if (diff <= 10000 && !go3Warned) {
+            ding();
+            go3Warned = true;
+          }
+        }
+      }
+    }
+
+    setInterval(updateUI, 200);
+
+    /* ---------- 버튼 이벤트 ---------- */
+    // 비숍 리저
+    document.querySelectorAll(".slot").forEach((slotEl, i) => {
+      const btn = slotEl.querySelector(".use-btn");
+      const input = slotEl.querySelector(".name-input");
+
+      btn.addEventListener("click", () => {
+        const now = Date.now();
+        slots[i].end = now + BISHOP_COOL;
+        slots[i].name = input.value;
+        dataRef.update({ slots });
+      });
+
+      input.addEventListener("change", () => {
+        slots[i].name = input.value;
+        dataRef.update({ slots });
+      });
+    });
+
+    // 손님다이
+    document.getElementById("dieBtn").addEventListener("click", () => {
+      dieEnd = Date.now() + DIE_COOL;
+      dieWarned = false;
+      dataRef.update({ dieEnd });
+    });
+
+    // 5분갈
+    document.getElementById("go5Btn").addEventListener("click", () => {
+      go5End = Date.now() + GO5;
+      go5Warned = false;
+      dataRef.update({ go5End });
+    });
+
+    // 3분갈
+    document.getElementById("go3Btn").addEventListener("click", () => {
+      go3End = Date.now() + GO3;
+      go3Warned = false;
+      dataRef.update({ go3End });
+    });
+
+    // 전체 초기화
+    document.getElementById("resetAll").addEventListener("click", () => {
+      slots = [
+        { name: "", end: null },
+        { name: "", end: null },
+        { name: "", end: null },
+        { name: "", end: null }
+      ];
+      dieEnd = null;
+      go5End = null;
+      go3End = null;
+      dieWarned = go5Warned = go3Warned = false;
+
+      dataRef.set({
+        slots,
+        dieEnd: null,
+        go5End: null,
+        go3End: null
+      });
+    });
+
+    // 비숍 초기화
+    document.getElementById("resetBishop").addEventListener("click", () => {
+      slots = [
+        { name: "", end: null },
+        { name: "", end: null },
+        { name: "", end: null },
+        { name: "", end: null }
+      ];
+      dataRef.update({ slots });
+    });
+  </script>
+</body>
+</html>
