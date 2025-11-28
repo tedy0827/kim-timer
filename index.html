@@ -503,7 +503,7 @@
           const mm = String(Math.floor(s / 60)).padStart(2, "0");
           const ss = String(s % 60).padStart(2, "0");
           go5RemainSpan.textContent = `${mm}:${ss}`;
-          go5Btn.textContent = "가는중...";
+          go5Btn.textContent = "혼테일 패는중";
           if (diff <= 10000 && !go5Warned) {
             ding();
             go5Warned = true;
@@ -527,7 +527,7 @@
           const mm = String(Math.floor(s / 60)).padStart(2, "0");
           const ss = String(s % 60).padStart(2, "0");
           go3RemainSpan.textContent = `${mm}:${ss}`;
-          go3Btn.textContent = "가는중...";
+          go3Btn.textContent = "혼태일 패는중";
           if (diff <= 10000 && !go3Warned) {
             ding();
             go3Warned = true;
@@ -612,5 +612,6 @@
   </script>
 </body>
 </html>
+
 
 
