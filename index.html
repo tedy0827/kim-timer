@@ -225,19 +225,46 @@
   </style>
 </head>
 <body>
-<script>
-  const PASSWORD = "popo";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-  // 단순한 prompt 대신 → 오입력 방지 + 취소 금지 처리
-  function passwordCheck() {
+  // Firebase 초기화 정보 (이미 너가 넣어둔 설정 그대로)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCcz6niw3L7eWbQSKg93h1z6e2JzzLe9RM",
+    authDomain: "timer-e2166.firebaseapp.com",
+    projectId: "timer-e2166",
+    storageBucket: "timer-e2166.firebasestorage.app",
+    messagingSenderId: "874547314662",
+    appId: "1:874547314662:web:d881135788a2d5b6716027",
+    measurementId: "G-7R1W5GBNKP"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Firestore에서 비밀번호 가져오기
+  async function checkPassword() {
+    const ref = doc(db, "security", "password");
+    const snapshot = await getDoc(ref);
+
+    if (!snapshot.exists()) {
+      alert("접속 오류: 비밀번호 문서가 없습니다.");
+      return;
+    }
+
+    const realPassword = snapshot.data().value;
+
     let input = prompt("비밀번호를 입력하세요:");
-    if (input === PASSWORD) return;
-    alert("비밀번호가 일치하지 않습니다!");
-    passwordCheck(); // 틀리면 다시 입력
+    if (input !== realPassword) {
+      alert("비밀번호가 일치하지 않습니다!");
+      return checkPassword(); // 다시 입력
+    }
   }
 
-  passwordCheck();
+  await checkPassword();
 </script>
+
 
   <div class="card">
     <!-- 제목 + 전체/비숍 초기화 -->
@@ -612,6 +639,7 @@
   </script>
 </body>
 </html>
+
 
 
 
