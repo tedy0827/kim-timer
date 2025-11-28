@@ -230,11 +230,16 @@
 <body style="visibility:hidden;">
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    onSnapshot
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-  // Firebase 초기화 정보 (이미 너가 넣어둔 설정 그대로)
+  // Firebase 설정
   const firebaseConfig = {
-    apiKey: "AIzaSyCcz6niw3L7eWbQSKg93h1z6e2JzzLe9RM",
+    apiKey: "AIzaSyCcz6niw3L7evbQSK9g3h1z6e2JzzLe9RM",
     authDomain: "timer-e2166.firebaseapp.com",
     projectId: "timer-e2166",
     storageBucket: "timer-e2166.firebasestorage.app",
@@ -246,46 +251,61 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Firestore에서 비밀번호 가져오기
-async function checkPassword() {
-  const ref = doc(db, "security", "password");
-  const snapshot = await getDoc(ref);
+  // 🔑 마지막으로 로그인할 때 사용한 비밀번호 저장용
+  let savedPassword = null;
 
-  if (!snapshot.exists()) {
-    alert("접속 오류: 비밀번호 문서가 없습니다.");
-    document.body.style.visibility = "visible";
-    return;
+  // Firestore에서 비밀번호 확인
+  async function checkPassword() {
+    const passwordRef = doc(db, "security", "password");
+    const snapshot = await getDoc(passwordRef);
+
+    if (!snapshot.exists()) {
+      alert("접속 오류: 비밀번호 문서가 없습니다.");
+      document.body.style.visibility = "visible";
+      return;
+    }
+
+    const realPassword = snapshot.data().value;
+    const input = prompt("비밀번호를 입력하세요:");
+
+    // 취소 눌렀을 때
+    if (input === null) {
+      return; // 화면 계속 숨김
+    }
+
+    if (input === realPassword) {
+      savedPassword = realPassword;              // ✅ 로그인에 사용한 비번 기억
+      document.body.style.visibility = "visible"; // 화면 보이기
+      return;
+    }
+
+    alert("비밀번호가 일치하지 않습니다!");
+    return checkPassword(); // 틀리면 다시 입력
   }
 
-  const realPassword = snapshot.data().value;
-
-  const input = prompt("비밀번호를 입력하세요:");
-  if (input === realPassword) {
-    // ✅ 비밀번호가 맞았을 때 여기서 화면을 보이게 함
-    document.body.style.visibility = "visible";
-    return; // 더 이상 재귀 호출 필요 없음, 여기서 끝
-  }
-
-  alert("비밀번호가 일치하지 않습니다!");
-  return checkPassword(); // ❌ 틀렸을 때만 다시 실행
-}
-
+  // 페이지 처음 들어올 때 비번 체크
   await checkPassword();
-  
-  // ⬇⬇⬇⬇⬇⬇⬇ 여기가 정확한 위치
+
+  // 🔥 비밀번호 변경 실시간 감지 → 자동 로그아웃
   const passwordRef = doc(db, "security", "password");
 
   onSnapshot(passwordRef, (snapshot) => {
+    if (!snapshot.exists()) {
+      alert("비밀번호 설정이 삭제되어 접속이 종료됩니다.");
+      location.reload();
+      return;
+    }
+
     const newPassword = snapshot.data().value;
 
-    // 비번 변경되면 강제 로그아웃
+    // 이미 로그인한 상태(sav edPassword 있음) + 새 비번이랑 다르면 → 강제 종료
     if (savedPassword && newPassword !== savedPassword) {
       alert("비밀번호가 변경되어 자동 로그아웃됩니다.");
       location.reload();
     }
   });
-
 </script>
+
 
 
   <div class="card">
@@ -661,6 +681,7 @@ async function checkPassword() {
   </script>
 </body>
 </html>
+
 
 
 
